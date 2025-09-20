@@ -70,7 +70,12 @@ const paketList = {
       'https://t.me/+eXWEgvPsFpY2MGI1',
       'https://t.me/+kT7I9m0V85JkZWY1',
       'https://t.me/+B_BQ68aeAd42MTI1'
-    ]
+  ]
+  },
+  vgk: {
+    name: "VGK VIP", 
+    harga: 2000,
+    channel: 'RANDOM_LINK'
   }
 };
 
@@ -81,11 +86,12 @@ async function showMainMenu(ctx) {
   const chatId = ctx.chat.id;
   await safeSendMessage(chatId,
     `👋 Selamat datang di bot VIP @ujoyp!\n\nPilih paket yang kamu inginkan:\n` +
-    `📦 Lokal - Rp2.000\n📦 Cina - Rp2.000\n📦 Asia - Rp2.000\n` +
+    `📦 VGK VIP - Rp2.000\n📦 Lokal - Rp2.000\n📦 Cina - Rp2.000\n📦 Asia - Rp2.000\n` +
     `📦 Amerika - Rp2.000\n📦 Yaoi - Rp2.000\n📦 Paket Lengkap Semua Channel - Rp6.000`,
     {
       reply_markup: {
         inline_keyboard: [
+          [{ text: '📦 VGK VIP', callback_data: 'vgk' }],
           [{ text: '📦 Lokal', callback_data: 'lokal' }],
           [{ text: '📦 Cina', callback_data: 'cina' }],
           [{ text: '📦 Asia', callback_data: 'asia' }],
@@ -105,7 +111,7 @@ bot.start(showMainMenu);
 // =======================
 // Pilih Paket
 // =======================
-bot.action(/^(lokal|cina|asia|amerika|yaoi|lengkap)$/, async (ctx) => {
+bot.action(/^(vgk|lokal|cina|asia|amerika|yaoi|lengkap)$/, async (ctx) => {
   const paketId = ctx.match[0];
   const userId = ctx.from.id;
 
@@ -223,6 +229,20 @@ bot.on('photo', async (ctx) => {
 // =======================
 async function sendVerifiedLinks(userId, pkg) {
   try {
+    if (pkg.name === 'VGK VIP') {
+      const randomChannels = [
+        paketList.lokal.channel,
+        paketList.cina.channel,
+        paketList.asia.channel,
+        paketList.amerika.channel
+      ];
+      const randomLink = randomChannels[Math.floor(Math.random() * randomChannels.length)];
+
+      const text = `✅ Pembayaran terverifikasi!\n\nBerikut link channel VIP paket <b>${escapeHtml(pkg.name)}</b>:\n${randomLink}`;
+      await safeSendMessage(userId, text, { parse_mode: 'HTML' });
+      return;
+    }
+
     if (Array.isArray(pkg.channel)) {
       await safeSendMessage(userId, `✅ Pembayaran terverifikasi!\n\nBerikut link channel VIP paket lengkap:`);
       for (const link of pkg.channel) {
@@ -236,6 +256,7 @@ async function sendVerifiedLinks(userId, pkg) {
     console.error('Error kirim link channel:', e);
   }
 }
+
 
 // =======================
 // Callback Actions
@@ -312,7 +333,7 @@ bot.command('batal', async (ctx) => {
 
 bot.on('callback_query', async (ctx) => {
   const data = ctx.callbackQuery.data;
-  if (!['lokal', 'cina', 'asia', 'amerika', 'yaoi', 'lengkap', 'continue_payment', 'cancel_order', 'back_to_menu'].includes(data)) {
+  if (!['lokal', 'cina', 'asia', 'amerika', 'yaoi', 'lengkap', 'vgk', 'continue_payment', 'cancel_order', 'back_to_menu'].includes(data)) {
     await ctx.answerCbQuery('Perintah tidak dikenali.');
   }
 });
