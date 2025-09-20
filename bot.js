@@ -7,10 +7,7 @@ function escapeHtml(text) {
     .replace(/>/g, "&gt;");
 }
 
-// =======================
-// 🔐 Konfigurasi Bot
-// =======================
-const BOT_TOKEN = '8006865528:AAE0vGWwNX1TpNKkRqShTKCygbq1RkPLm64';
+const BOT_TOKEN = 'YOUR_BOT_TOKEN';
 const DANA_QR_LINK = 'https://files.catbox.moe/mxovdq.jpg';
 const DANA_NUMBER = '087883536039';
 const ADMIN_ID = 6468926488;
@@ -20,14 +17,8 @@ const PAYMENT_TIMEOUT = 24 * 60 * 60 * 1000;
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// =======================
-// Data pengguna
-// =======================
 const users = {};
 
-// =======================
-// Fungsi safe send
-// =======================
 async function safeSendMessage(chatId, text, extra = {}) {
   try {
     await bot.telegram.sendMessage(chatId, text, extra);
@@ -54,9 +45,6 @@ async function safeSendPhoto(chatId, photo, extra = {}) {
   }
 }
 
-// =======================
-// Daftar Paket
-// =======================
 const paketList = {
   lokal: { name: "Lokal", harga: 2000, channel: 'https://t.me/+P1hlp7dNmdgyOTVl' },
   cina: { name: "Cina", harga: 2000, channel: 'https://t.me/+eXWEgvPsFpY2MGI1' },
@@ -71,18 +59,20 @@ const paketList = {
       'https://t.me/+kT7I9m0V85JkZWY1',
       'https://t.me/+B_BQ68aeAd42MTI1'
     ]
+  },
+  vgk: {
+    name: "VGK VIP",
+    harga: 2000,
+    channel: 'RANDOM_LINK'
   }
 };
 
-// =======================
-// Menu Utama
-// =======================
 async function showMainMenu(ctx) {
   const chatId = ctx.chat.id;
   await safeSendMessage(chatId,
     `👋 Selamat datang di bot VIP @ujoyp!\n\nPilih paket yang kamu inginkan:\n` +
     `📦 Lokal - Rp2.000\n📦 Cina - Rp2.000\n📦 Asia - Rp2.000\n` +
-    `📦 Amerika - Rp2.000\n📦 Yaoi - Rp2.000\n📦 Paket Lengkap Semua Channel - Rp6.000`,
+    `📦 Amerika - Rp2.000\n📦 Yaoi - Rp2.000\n📦 VGK VIP - Rp2.000\n📦 Semua Channel - Rp6.000`,
     {
       reply_markup: {
         inline_keyboard: [
@@ -91,21 +81,16 @@ async function showMainMenu(ctx) {
           [{ text: '📦 Asia', callback_data: 'asia' }],
           [{ text: '📦 Amerika', callback_data: 'amerika' }],
           [{ text: '📦 Yaoi', callback_data: 'yaoi' }],
+          [{ text: '📦 VGK VIP', callback_data: 'vgk' }],
           [{ text: '📦 Semua Channel - Rp6.000', callback_data: 'lengkap' }]
         ]
       }
     });
 }
 
-// =======================
-// /start
-// =======================
 bot.start(showMainMenu);
 
-// =======================
-// Pilih Paket
-// =======================
-bot.action(/^(lokal|cina|asia|amerika|yaoi|lengkap)$/, async (ctx) => {
+bot.action(/^(lokal|cina|asia|amerika|yaoi|lengkap|vgk)$/, async (ctx) => {
   const paketId = ctx.match[0];
   const userId = ctx.from.id;
 
@@ -170,9 +155,6 @@ bot.action(/^(lokal|cina|asia|amerika|yaoi|lengkap)$/, async (ctx) => {
   await ctx.answerCbQuery();
 });
 
-// =======================
-// Bukti pembayaran (photo)
-// =======================
 bot.on('photo', async (ctx) => {
   const userId = ctx.from.id;
 
@@ -218,11 +200,22 @@ bot.on('photo', async (ctx) => {
   }
 });
 
-// =======================
-// Kirim link ke user setelah verifikasi
-// =======================
 async function sendVerifiedLinks(userId, pkg) {
   try {
+    if (pkg.name === 'VGK VIP') {
+      const randomChannels = [
+        paketList.lokal.channel,
+        paketList.cina.channel,
+        paketList.asia.channel,
+        paketList.amerika.channel
+      ];
+      const randomLink = randomChannels[Math.floor(Math.random() * randomChannels.length)];
+
+      const text = `✅ Pembayaran terverifikasi!\n\nBerikut link channel VIP paket <b>${escapeHtml(pkg.name)}</b>:\n${randomLink}`;
+      await safeSendMessage(userId, text, { parse_mode: 'HTML' });
+      return;
+    }
+
     if (Array.isArray(pkg.channel)) {
       await safeSendMessage(userId, `✅ Pembayaran terverifikasi!\n\nBerikut link channel VIP paket lengkap:`);
       for (const link of pkg.channel) {
@@ -237,9 +230,6 @@ async function sendVerifiedLinks(userId, pkg) {
   }
 }
 
-// =======================
-// Callback Actions
-// =======================
 bot.action('continue_payment', async (ctx) => {
   const userId = ctx.from.id;
   const order = users[userId];
@@ -280,9 +270,6 @@ bot.action('back_to_menu', async (ctx) => {
   await ctx.answerCbQuery();
 });
 
-// =======================
-// Command Tambahan
-// =======================
 bot.command('help', async (ctx) => {
   await safeSendMessage(ctx.chat.id,
     `ℹ️ *Panduan Penggunaan Bot:*\n\n` +
@@ -312,14 +299,11 @@ bot.command('batal', async (ctx) => {
 
 bot.on('callback_query', async (ctx) => {
   const data = ctx.callbackQuery.data;
-  if (!['lokal', 'cina', 'asia', 'amerika', 'yaoi', 'lengkap', 'continue_payment', 'cancel_order', 'back_to_menu'].includes(data)) {
+  if (!['lokal', 'cina', 'asia', 'amerika', 'yaoi', 'lengkap', 'vgk', 'continue_payment', 'cancel_order', 'back_to_menu'].includes(data)) {
     await ctx.answerCbQuery('Perintah tidak dikenali.');
   }
 });
 
-// =======================
-// Error Global
-// =======================
 bot.catch((err, ctx) => {
   const chatId = ctx.chat?.id || ctx.callbackQuery?.from?.id;
   if (err?.response?.error_code === 403 && chatId) {
@@ -330,9 +314,6 @@ bot.catch((err, ctx) => {
   }
 });
 
-// =======================
-// Jalankan Bot
-// =======================
 bot.launch().then(() => {
   console.log('Bot sudah berjalan...');
 });
