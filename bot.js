@@ -240,24 +240,27 @@ async function sendInstructionToUser(userId, pkg) {
     });
 
     const textInstruksi =
-      `✅ Bukti pembayaran sudah diterima!\n\n` +
-      `Untuk mendapatkan akses VIP, silakan kirim pesan ke admin @ujoyp dengan format berikut:\n\n` +
-      `📋 *Format Pesan:*\n` +
-      `\`\`\`\n` +
-      `beli nama vip : ${pkg.name}\n` +
-      `tanggal bayar : ${tanggal}\n` +
-      `\`\`\`\n` +
-      `Klik tombol di bawah untuk langsung chat admin dan *tempel format tersebut di chat!*`;
+  `✅ Bukti pembayaran sudah diterima!\n\n` +
+  `Untuk mendapatkan akses VIP, silakan kirim pesan ke admin @ujoyp dengan format berikut:\n\n` +
+  `📋 *Format Pesan (salin dan tempel di chat admin):*\n\n` +
+  `\`\`\`\n` +
+  `beli nama vip : ${pkg.name}\n` +
+  `tanggal bayar : ${tanggal}\n` +
+  `\`\`\``;
 
-    const encodedText = encodeURIComponent(`beli nama vip : ${pkg.name}\ntanggal bayar : ${tanggal}`);
-    const adminLink = `https://t.me/ujoyp?text=${encodedText}`;
+const encodedText = encodeURIComponent(`beli nama vip : ${pkg.name}\ntanggal bayar : ${tanggal}`);
+const adminLink = `https://t.me/ujoyp?text=${encodedText}`;
 
-    await safeSendMessage(userId, textInstruksi, {
-      parse_mode: 'Markdown',
-      reply_markup: Markup.inlineKeyboard([
-        [Markup.button.url('💬 Chat Admin Sekarang', adminLink)]
-      ])
-    });
+// Kirim teks dulu
+await safeSendMessage(userId, textInstruksi, { parse_mode: 'Markdown' });
+
+// Baru kirim tombol di pesan terpisah
+await safeSendMessage(userId, '💬 Klik tombol di bawah untuk langsung chat admin:', {
+  reply_markup: Markup.inlineKeyboard([
+    [Markup.button.url('💬 Chat Admin Sekarang', adminLink)]
+  ])
+});
+
 
   } catch (e) {
     console.error('Error kirim instruksi ke user:', e);
