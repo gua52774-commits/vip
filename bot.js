@@ -70,10 +70,10 @@ const paketList = {
       'https://t.me/+eXWEgvPsFpY2MGI1',
       'https://t.me/+kT7I9m0V85JkZWY1',
       'https://t.me/+B_BQ68aeAd42MTI1'
-  ]
+    ]
   },
   vgk: {
-    name: "VGK VIP", 
+    name: "VGK VIP",
     harga: 2000,
     channel: 'RANDOM_LINK'
   }
@@ -227,9 +227,8 @@ bot.on('photo', async (ctx) => {
   }
 });
 
-
 // =======================
-// Fungsi kirim instruksi ke user setelah kirim bukti
+// Fungsi kirim instruksi ke user
 // =======================
 async function sendInstructionToUser(userId, pkg) {
   try {
@@ -239,23 +238,22 @@ async function sendInstructionToUser(userId, pkg) {
       hour12: false
     });
 
+    const formatPesan = `beli nama vip : ${pkg.name}\ntanggal bayar : ${tanggal}`;
+    const encodedText = encodeURIComponent(formatPesan);
+    const adminLink = `https://t.me/ujoyp?text=${encodedText}`;
+    const copyLink = `tg://copy_text?text=${encodedText}`;
+
     const textInstruksi =
       `✅ Bukti pembayaran sudah diterima!\n\n` +
-      `Untuk mendapatkan akses VIP, silakan kirim pesan ke admin @ujoyp dengan format berikut:\n\n` +
-      `📋 *Format Pesan:*\n` +
-      `\`\`\`\n` +
-      `beli nama vip : ${pkg.name}\n` +
-      `tanggal bayar : ${tanggal}\n` +
-      `\`\`\`\n` +
-      `Klik tombol di bawah untuk langsung chat admin dan *tempel format tersebut di chat!*`;
-
-    const encodedText = encodeURIComponent(`beli nama vip : ${pkg.name}\ntanggal bayar : ${tanggal}`);
-    const adminLink = `https://t.me/ujoyp?text=${encodedText}`;
+      `Untuk mendapatkan akses VIP, kirim pesan ke admin @ujoyp dengan format berikut:\n\n` +
+      `📋 *Format Pesan:*\n\`\`\`\n${formatPesan}\n\`\`\`\n` +
+      `Pilih salah satu tombol di bawah:`;
 
     await safeSendMessage(userId, textInstruksi, {
       parse_mode: 'Markdown',
       reply_markup: Markup.inlineKeyboard([
-        [Markup.button.url('💬 Chat Admin Sekarang', adminLink)]
+        [Markup.button.url('💬 Chat Admin Sekarang', adminLink)],
+        [Markup.button.url('📋 Salin Format', copyLink)]
       ])
     });
 
@@ -263,7 +261,6 @@ async function sendInstructionToUser(userId, pkg) {
     console.error('Error kirim instruksi ke user:', e);
   }
 }
-
 
 // =======================
 // Callback Actions
