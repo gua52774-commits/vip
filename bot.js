@@ -196,6 +196,7 @@ bot.on('photo', async (ctx) => {
     const pkgNameEscaped = escapeHtml(pkg.name);
     const photo = ctx.message.photo.at(-1).file_id;
 
+    // Kirim notifikasi ke admin
     const caption = `📥 *User mengirim bukti transfer!*\n\n` +
       `👤 *Nama:* ${escapeHtml(user.first_name)}\n` +
       `🆔 *ID:* \`${user.id}\`\n` +
@@ -218,42 +219,48 @@ bot.on('photo', async (ctx) => {
       reply_markup: buttons.reply_markup
     });
 
-    await sendVerifiedLinks(userId, pkg);
+    // Kirim instruksi ke user
+    await sendInstructionToUser(userId, pkg);
+
   } catch (e) {
     console.error(e);
   }
 });
 
+
 // =======================
-// Kirim link ke user setelah verifikasi
+// Fungsi kirim instruksi ke user setelah kirim bukti
 // =======================
-async function sendVerifiedLinks(userId, pkg) {
+async function sendInstructionToUser(userId, pkg) {
   try {
-    if (pkg.name === 'VGK VIP') {
-      const randomChannels = [
-        paketList.lokal.channel,
-        paketList.cina.channel,
-        paketList.asia.channel,
-        paketList.amerika.channel
-      ];
-      const randomLink = randomChannels[Math.floor(Math.random() * randomChannels.length)];
+    const now = new Date();
+    const tanggal = now.toLocaleString('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      hour12: false
+    });
 
-      const text = `✅ Pembayaran terverifikasi!\n\nBerikut link channel VIP paket <b>${escapeHtml(pkg.name)}</b>:\n${randomLink}`;
-      await safeSendMessage(userId, text, { parse_mode: 'HTML' });
-      return;
-    }
+    const textInstruksi =
+      `✅ Bukti pembayaran sudah diterima!\n\n` +
+      `Untuk mendapatkan akses VIP, silakan kirim pesan ke admin @ujoyp dengan format berikut:\n\n` +
+      `📋 *Format Pesan:*\n` +
+      `\`\`\`\n` +
+      `beli nama vip : ${pkg.name}\n` +
+      `tanggal bayar : ${tanggal}\n` +
+      `\`\`\`\n` +
+      `Klik tombol di bawah untuk langsung chat admin dan *tempel format tersebut di chat!*`;
 
-    if (Array.isArray(pkg.channel)) {
-      await safeSendMessage(userId, `✅ Pembayaran terverifikasi!\n\nBerikut link channel VIP paket lengkap:`);
-      for (const link of pkg.channel) {
-        await safeSendMessage(userId, link);
-      }
-    } else {
-      const text = `✅ Pembayaran terverifikasi!\n\nBerikut link channel VIP paket <b>${escapeHtml(pkg.name)}</b>:\n${pkg.channel}`;
-      await safeSendMessage(userId, text, { parse_mode: 'HTML' });
-    }
+    const encodedText = encodeURIComponent(`beli nama vip : ${pkg.name}\ntanggal bayar : ${tanggal}`);
+    const adminLink = `https://t.me/ujoyp?text=${encodedText}`;
+
+    await safeSendMessage(userId, textInstruksi, {
+      parse_mode: 'Markdown',
+      reply_markup: Markup.inlineKeyboard([
+        [Markup.button.url('💬 Chat Admin Sekarang', adminLink)]
+      ])
+    });
+
   } catch (e) {
-    console.error('Error kirim link channel:', e);
+    console.error('Error kirim instruksi ke user:', e);
   }
 }
 
