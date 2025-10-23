@@ -247,7 +247,7 @@ async function sendInstructionToUser(userId, pkg) {
       `✅ Bukti pembayaran sudah diterima!\n\n` +
       `Untuk mendapatkan akses VIP, kirim pesan ke admin @ujoyp dengan format berikut:\n\n` +
       `📋 *Format Pesan:*\n\`\`\`\n${formatPesan}\n\`\`\`\n` +
-      `Pilih salah satu tombol di bawah:`;
+      `admin : @ujoyp`;
 
     await safeSendMessage(userId, textInstruksi, {
       parse_mode: 'Markdown',
