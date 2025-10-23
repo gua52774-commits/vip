@@ -359,6 +359,47 @@ bot.catch((err, ctx) => {
 });
 
 // =======================
+// Pesan yang tidak dikenali
+// =======================
+bot.on('message', async (ctx) => {
+  // Abaikan pesan foto karena sudah ditangani di atas
+  if (ctx.message.photo) return;
+
+  const chatId = ctx.chat.id;
+
+  await safeSendMessage(chatId,
+    `🤖 Maaf, perintah atau pesan kamu tidak dikenali.\n\n` +
+    `Jika mengalami kesalahan atau butuh bantuan, silakan hubungi admin: @ujoyp\n\n` +
+    `ℹ️ Gunakan tombol di bawah untuk memulai atau melihat panduan.`,
+    {
+      reply_markup: Markup.inlineKeyboard([
+        [Markup.button.callback('🚀 Mulai /start', 'back_to_menu')],
+        [Markup.button.callback('📘 Bantuan /help', 'show_help')],
+        [Markup.button.url('💬 Hubungi Admin', 'https://t.me/ujoyp')]
+      ])
+    }
+  );
+});
+
+// Handler khusus untuk tombol "📘 Bantuan /help"
+bot.action('show_help', async (ctx) => {
+  await ctx.answerCbQuery();
+  await ctx.reply(
+    `ℹ️ *Panduan Penggunaan Bot:*\n\n` +
+    `1. Gunakan /start untuk memilih paket.\n` +
+    `2. Bayar menggunakan QR DANA.\n` +
+    `3. Kirim bukti pembayaran (foto/screenshot).\n` +
+    `4. Tunggu verifikasi admin.\n` +
+    `5. Dapatkan akses ke channel VIP!\n\n` +
+    `📌 *Perintah:*\n` +
+    `/batal – Batalkan transaksi\n` +
+    `/help – Bantuan\n\n` +
+    `Hubungi admin: @ujoyp`,
+    { parse_mode: 'Markdown' }
+  );
+});
+
+// =======================
 // Jalankan Bot
 // =======================
 bot.launch().then(() => {
