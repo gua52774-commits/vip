@@ -362,22 +362,14 @@ bot.catch((err, ctx) => {
 // Pesan yang tidak dikenali
 // =======================
 bot.on('message', async (ctx) => {
-  // Abaikan pesan foto karena sudah ditangani di atas
+  // Abaikan foto karena sudah ditangani di bagian bukti pembayaran
   if (ctx.message.photo) return;
 
-  const chatId = ctx.chat.id;
-
-  await safeSendMessage(chatId,
+  await safeSendMessage(
+    ctx.chat.id,
     `🤖 Maaf, perintah atau pesan kamu tidak dikenali.\n\n` +
-    `Jika mengalami kesalahan atau butuh bantuan, silakan hubungi admin: @ujoyp\n\n` +
-    `ℹ️ Gunakan tombol di bawah untuk memulai atau melihat panduan.`,
-    {
-      reply_markup: Markup.inlineKeyboard([
-        [Markup.button.callback('🚀 Mulai /start', 'back_to_menu')],
-        [Markup.button.callback('📘 Bantuan /help', 'show_help')],
-        [Markup.button.url('💬 Hubungi Admin', 'https://t.me/ujoyp')]
-      ])
-    }
+    `Jika terjadi kesalahan atau kamu butuh bantuan, silakan hubungi admin: @ujoyp\n\n` +
+    `ℹ️ Gunakan /start untuk kembali ke menu utama atau /help untuk panduan penggunaan bot.`
   );
 });
 
