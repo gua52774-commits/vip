@@ -1,22 +1,15 @@
 const { Telegraf, Markup } = require('telegraf');
 
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
 // =======================
 // 🔐 Konfigurasi Bot
 // =======================
-const BOT_TOKEN = '8006865528:AAE0vGWwNX1TpNKkRqShTKCygbq1RkPLm64';
+const BOT_TOKEN = 'ISI_TOKEN_KAMU_DI_SINI';
 const DANA_QR_LINK = 'https://files.catbox.moe/mxovdq.jpg';
 const DANA_NUMBER = '087883536039';
 const ADMIN_ID = 6468926488;
 
-const REMINDER_TIMEOUT = 12 * 60 * 60 * 1000;
-const PAYMENT_TIMEOUT = 24 * 60 * 60 * 1000;
+const REMINDER_TIMEOUT = 12 * 60 * 60 * 1000; // 12 jam
+const PAYMENT_TIMEOUT = 24 * 60 * 60 * 1000; // 24 jam
 
 const bot = new Telegraf(BOT_TOKEN);
 
@@ -26,7 +19,7 @@ const bot = new Telegraf(BOT_TOKEN);
 const users = {};
 
 // =======================
-// Fungsi safe send
+// Fungsi aman kirim pesan
 // =======================
 async function safeSendMessage(chatId, text, extra = {}) {
   try {
@@ -55,7 +48,7 @@ async function safeSendPhoto(chatId, photo, extra = {}) {
 }
 
 // =======================
-// Daftar Paket
+// Daftar Paket (VGK Dihapus)
 // =======================
 const paketList = {
   lokal: { name: "Lokal", harga: 2000, channel: 'https://t.me/+P1hlp7dNmdgyOTVl' },
@@ -64,41 +57,36 @@ const paketList = {
   amerika: { name: "Amerika", harga: 2000, channel: 'https://t.me/+kT7I9m0V85JkZWY1' },
   yaoi: { name: "Yaoi", harga: 2000, channel: 'https://t.me/+B_BQ68aeAd42MTI1' },
   lengkap: {
-    name: "Paket Lengkap Semua Channel", harga: 6000, channel: [
+    name: "Paket Lengkap Semua Channel",
+    harga: 6000,
+    channel: [
       'https://t.me/+RdCldl43tqk5YzY1',
       'https://t.me/+P1hlp7dNmdgyOTVl',
       'https://t.me/+eXWEgvPsFpY2MGI1',
       'https://t.me/+kT7I9m0V85JkZWY1',
       'https://t.me/+B_BQ68aeAd42MTI1'
     ]
-  },
-  vgk: {
-    name: "VGK VIP",
-    harga: 2000,
-    channel: 'RANDOM_LINK'
   }
 };
 
 // =======================
-// Menu Utama
+// Menu Utama (Reply Keyboard)
 // =======================
 async function showMainMenu(ctx) {
   const chatId = ctx.chat.id;
   await safeSendMessage(chatId,
-    `👋 Selamat datang di bot VIP @ujoyp!\n\nPilih paket yang kamu inginkan:\n` +
-    `📦 VGK VIP - Rp2.000\n📦 Lokal - Rp2.000\n📦 Cina - Rp2.000\n📦 Asia - Rp2.000\n` +
-    `📦 Amerika - Rp2.000\n📦 Yaoi - Rp2.000\n📦 Paket Lengkap Semua Channel - Rp6.000`,
+    `👋 Selamat datang di bot VIP @ujoyp!\n\nPilih paket yang kamu inginkan:\n\n` +
+    `📦 Lokal - Rp2.000\n📦 Cina - Rp2.000\n📦 Asia - Rp2.000\n📦 Amerika - Rp2.000\n📦 Yaoi - Rp2.000\n📦 Semua Channel - Rp6.000`,
     {
       reply_markup: {
-        inline_keyboard: [
-          [{ text: '📦 VGK VIP', callback_data: 'vgk' }],
-          [{ text: '📦 Lokal', callback_data: 'lokal' }],
-          [{ text: '📦 Cina', callback_data: 'cina' }],
-          [{ text: '📦 Asia', callback_data: 'asia' }],
-          [{ text: '📦 Amerika', callback_data: 'amerika' }],
-          [{ text: '📦 Yaoi', callback_data: 'yaoi' }],
-          [{ text: '📦 Semua Channel - Rp6.000', callback_data: 'lengkap' }]
-        ]
+        keyboard: [
+          ['📦 Lokal', '📦 Cina'],
+          ['📦 Asia', '📦 Amerika'],
+          ['📦 Yaoi', '📦 Semua Channel'],
+          ['❌ Batalkan Pesanan']
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: false
       }
     });
 }
@@ -109,23 +97,24 @@ async function showMainMenu(ctx) {
 bot.start(showMainMenu);
 
 // =======================
-// Pilih Paket
+// Pilih Paket via Reply Keyboard
 // =======================
-bot.action(/^(vgk|lokal|cina|asia|amerika|yaoi|lengkap)$/, async (ctx) => {
-  const paketId = ctx.match[0];
+bot.hears([
+  '📦 Lokal',
+  '📦 Cina',
+  '📦 Asia',
+  '📦 Amerika',
+  '📦 Yaoi',
+  '📦 Semua Channel'
+], async (ctx) => {
+  const text = ctx.message.text;
   const userId = ctx.from.id;
+  const paketId = text.includes('Semua') ? 'lengkap' : text.split(' ')[1].toLowerCase();
 
   if (users[userId]?.status === 'pending') {
-    await ctx.answerCbQuery();
     return ctx.reply(
       `⚠️ Kamu masih memiliki transaksi *${paketList[users[userId].paket].name}* yang belum selesai.\nSilakan lanjutkan bayar atau ketik /batal`,
-      {
-        parse_mode: 'Markdown',
-        reply_markup: Markup.inlineKeyboard([
-          [Markup.button.callback('✅ Lanjutkan Pembayaran', 'continue_payment')],
-          [Markup.button.callback('❌ Batalkan Pesanan', 'cancel_order')]
-        ])
-      }
+      { parse_mode: 'Markdown' }
     );
   }
 
@@ -140,17 +129,13 @@ bot.action(/^(vgk|lokal|cina|asia|amerika|yaoi|lengkap)$/, async (ctx) => {
 
   const pkg = paketList[paketId];
   const caption = `📦 *${pkg.name}* – Rp${pkg.harga.toLocaleString('id-ID')}\n\n` +
-    `Silakan scan QR di atas.\nKirim bukti pembayaran (foto/screenshot) ke sini.\n\n` +
+    `Silakan scan QR di atas lalu kirim bukti pembayaran (foto/screenshot) ke sini.\n\n` +
     `*Jangan kirim bukti palsu, kamu bisa di-banned!*\n` +
     `Butuh bantuan? Hubungi admin @ujoyp`;
 
   await ctx.replyWithPhoto(DANA_QR_LINK, {
     caption,
-    parse_mode: 'Markdown',
-    reply_markup: Markup.inlineKeyboard([
-      [Markup.button.url('📞 Hubungi Admin', 'https://t.me/ujoyp')],
-      [Markup.button.callback('❌ Batalkan Pesanan', 'cancel_order')]
-    ])
+    parse_mode: 'Markdown'
   });
 
   const reminderId = setTimeout(() => {
@@ -164,20 +149,15 @@ bot.action(/^(vgk|lokal|cina|asia|amerika|yaoi|lengkap)$/, async (ctx) => {
   const timeoutId = setTimeout(() => {
     if (users[userId]?.status === 'pending') {
       delete users[userId];
-      safeSendMessage(userId, `⏰ Waktu pembayaran habis. Silakan ulangi pembelian.`, {
-        reply_markup: Markup.inlineKeyboard([
-          [Markup.button.callback('🔁 Kembali ke Menu', 'back_to_menu')]
-        ])
-      });
+      safeSendMessage(userId, `⏰ Waktu pembayaran habis. Silakan ulangi pembelian.`);
     }
   }, PAYMENT_TIMEOUT);
 
   users[userId].timeoutIds.push(reminderId, timeoutId);
-  await ctx.answerCbQuery();
 });
 
 // =======================
-// Bukti pembayaran (photo)
+// Bukti pembayaran (foto)
 // =======================
 bot.on('photo', async (ctx) => {
   const userId = ctx.from.id;
@@ -193,35 +173,19 @@ bot.on('photo', async (ctx) => {
 
   try {
     const user = ctx.from;
-    const pkgNameEscaped = escapeHtml(pkg.name);
     const photo = ctx.message.photo.at(-1).file_id;
 
-    // Kirim notifikasi ke admin
     const caption = `📥 *User mengirim bukti transfer!*\n\n` +
-      `👤 *Nama:* ${escapeHtml(user.first_name)}\n` +
+      `👤 *Nama:* ${user.first_name}\n` +
       `🆔 *ID:* \`${user.id}\`\n` +
-      `📦 *Paket:* ${pkgNameEscaped}`;
-
-    let buttons;
-    if (user.username) {
-      buttons = Markup.inlineKeyboard([
-        [Markup.button.url(`👤 @${user.username}`, `https://t.me/${user.username}`)]
-      ]);
-    } else {
-      buttons = Markup.inlineKeyboard([
-        [{ text: `🆔 ID: ${user.id}`, callback_data: 'noop' }]
-      ]);
-    }
+      `📦 *Paket:* ${pkg.name}`;
 
     await bot.telegram.sendPhoto(ADMIN_ID, photo, {
       caption,
-      parse_mode: 'Markdown',
-      reply_markup: buttons.reply_markup
+      parse_mode: 'Markdown'
     });
 
-    // Kirim instruksi ke user
     await sendInstructionToUser(userId, pkg);
-
   } catch (e) {
     console.error(e);
   }
@@ -233,15 +197,10 @@ bot.on('photo', async (ctx) => {
 async function sendInstructionToUser(userId, pkg) {
   try {
     const now = new Date();
-    const tanggal = now.toLocaleString('id-ID', {
-      timeZone: 'Asia/Jakarta',
-      hour12: false
-    });
-
+    const tanggal = now.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false });
     const formatPesan = `beli nama vip : ${pkg.name}\ntanggal bayar : ${tanggal}`;
     const encodedText = encodeURIComponent(formatPesan);
     const adminLink = `https://t.me/ujoyp?text=${encodedText}`;
-    const copyLink = `tg://copy_text?text=${encodedText}`;
 
     const textInstruksi =
       `✅ Bukti pembayaran sudah diterima!\n\n` +
@@ -251,59 +210,18 @@ async function sendInstructionToUser(userId, pkg) {
 
     await safeSendMessage(userId, textInstruksi, {
       parse_mode: 'Markdown',
-      reply_markup: Markup.inlineKeyboard([
-        [Markup.button.url('💬 Chat Admin Sekarang', adminLink)],
-        [Markup.button.url('📋 Salin Format', copyLink)]
-      ])
+      reply_markup: {
+        keyboard: [
+          ['💬 Chat Admin Sekarang'],
+          ['🔙 Kembali ke Menu']
+        ],
+        resize_keyboard: true
+      }
     });
-
   } catch (e) {
     console.error('Error kirim instruksi ke user:', e);
   }
 }
-
-// =======================
-// Callback Actions
-// =======================
-bot.action('continue_payment', async (ctx) => {
-  const userId = ctx.from.id;
-  const order = users[userId];
-  if (!order || order.status !== 'pending') {
-    return await ctx.reply('❌ Tidak ada transaksi yang tertunda.');
-  }
-
-  const pkg = paketList[order.paket];
-  await ctx.replyWithPhoto(DANA_QR_LINK, {
-    caption: `📦 *${pkg.name}* – Rp${pkg.harga.toLocaleString('id-ID')}\n\nSilakan lanjutkan pembayaran via DANA ke:\n📱 *${DANA_NUMBER}*`,
-    parse_mode: 'Markdown',
-    reply_markup: Markup.inlineKeyboard([
-      [Markup.button.url('📞 Hubungi Admin', 'https://t.me/ujoyp')],
-      [Markup.button.callback('❌ Batalkan Pesanan', 'cancel_order')]
-    ])
-  });
-
-  await ctx.answerCbQuery();
-});
-
-bot.action('cancel_order', async (ctx) => {
-  const userId = ctx.from.id;
-  if (!users[userId] || users[userId].status !== 'pending') {
-    return await ctx.answerCbQuery('❌ Tidak ada pesanan yang bisa dibatalkan.', { show_alert: true });
-  }
-
-  users[userId].timeoutIds.forEach(id => clearTimeout(id));
-  delete users[userId];
-
-  await ctx.answerCbQuery('✅ Pesanan dibatalkan.');
-  await ctx.reply('❌ Pesanan kamu sudah dibatalkan.', Markup.inlineKeyboard([
-    [Markup.button.callback('🔙 Kembali ke Menu', 'back_to_menu')]
-  ]));
-});
-
-bot.action('back_to_menu', async (ctx) => {
-  await showMainMenu(ctx);
-  await ctx.answerCbQuery();
-});
 
 // =======================
 // Command Tambahan
@@ -335,15 +253,26 @@ bot.command('batal', async (ctx) => {
   await safeSendMessage(userId, '✅ Transaksi berhasil dibatalkan.');
 });
 
-bot.on('callback_query', async (ctx) => {
-  const data = ctx.callbackQuery.data;
-  if (!['lokal', 'cina', 'asia', 'amerika', 'yaoi', 'lengkap', 'vgk', 'continue_payment', 'cancel_order', 'back_to_menu'].includes(data)) {
-    await ctx.answerCbQuery('Perintah tidak dikenali.');
+// =======================
+// Keyboard Handler Tambahan
+// =======================
+bot.hears('❌ Batalkan Pesanan', async (ctx) => {
+  const userId = ctx.from.id;
+  if (!users[userId] || users[userId].status !== 'pending') {
+    return ctx.reply('❌ Kamu tidak memiliki transaksi aktif.');
   }
+  users[userId].timeoutIds.forEach(id => clearTimeout(id));
+  delete users[userId];
+  await ctx.reply('✅ Pesanan kamu sudah dibatalkan.');
+});
+
+bot.hears('🔙 Kembali ke Menu', async (ctx) => showMainMenu(ctx));
+bot.hears('💬 Chat Admin Sekarang', async (ctx) => {
+  await ctx.reply('Klik link berikut untuk menghubungi admin: https://t.me/ujoyp');
 });
 
 // =======================
-// Error Global
+// Error Handler Global
 // =======================
 bot.catch((err, ctx) => {
   const chatId = ctx.chat?.id || ctx.callbackQuery?.from?.id;
@@ -359,7 +288,7 @@ bot.catch((err, ctx) => {
 // Jalankan Bot
 // =======================
 bot.launch().then(() => {
-  console.log('Bot sudah berjalan...');
+  console.log('🤖 Bot sudah berjalan...');
 });
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
