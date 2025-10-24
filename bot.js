@@ -3,7 +3,7 @@ const { Telegraf, Markup } = require('telegraf');
 // =======================
 // 🔐 Konfigurasi Bot
 // =======================
-const BOT_TOKEN = 'ISI_TOKEN_KAMU_DI_SINI';
+const BOT_TOKEN = '8006865528:AAE0vGWwNX1TpNKkRqShTKCygbq1RkPLm64';
 const DANA_QR_LINK = 'https://files.catbox.moe/mxovdq.jpg';
 const DANA_NUMBER = '087883536039';
 const ADMIN_ID = 6468926488;
