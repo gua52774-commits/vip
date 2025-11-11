@@ -166,9 +166,9 @@ bot.on('photo', async (ctx) => {
   const photo = ctx.message.photo.at(-1).file_id;
 
   const caption = `📥 *User mengirim bukti transfer!*\n\n` +
-    `👤 *Nama:* ${user.first_name}\n` +
-    `🆔 *ID:* \`${user.id}\`\n` +
-    `📦 *Paket:* ${pkg.name}`;
+  `👤 [${user.first_name}](tg://user?id=${user.id})\n` +
+  `🆔 *ID:* \`${user.id}\`\n` +
+  `📦 *Paket:* ${pkg.name}`;
 
   await bot.telegram.sendPhoto(ADMIN_ID, photo, { caption, parse_mode: 'Markdown' });
 
