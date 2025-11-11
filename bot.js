@@ -6,10 +6,12 @@ const { Telegraf, Markup } = require('telegraf');
 const BOT_TOKEN = '8006865528:AAE0vGWwNX1TpNKkRqShTKCygbq1RkPLm64';
 const DANA_QR_LINK = 'https://files.catbox.moe/mxovdq.jpg';
 const DANA_NUMBER = '087883536039';
-const ADMIN_ID = 6468926488;
+const ADMIN_ID = 7598563861;
+const ADMIN_USERNAME = 'jnizo'; // ubah username admin
 
 const REMINDER_TIMEOUT = 12 * 60 * 60 * 1000; // 12 jam
 const PAYMENT_TIMEOUT = 24 * 60 * 60 * 1000; // 24 jam
+const AKTIF_DURASI = 30 * 24 * 60 * 60 * 1000; // 30 hari
 
 const bot = new Telegraf(BOT_TOKEN);
 
@@ -48,7 +50,7 @@ async function safeSendPhoto(chatId, photo, extra = {}) {
 }
 
 // =======================
-// Daftar Paket (VGK Dihapus)
+// Daftar Paket
 // =======================
 const paketList = {
   lokal: { name: "Lokal", harga: 2000, channel: 'https://t.me/+P1hlp7dNmdgyOTVl' },
@@ -70,12 +72,12 @@ const paketList = {
 };
 
 // =======================
-// Menu Utama (Reply Keyboard)
+// Menu Utama
 // =======================
 async function showMainMenu(ctx) {
   const chatId = ctx.chat.id;
   await safeSendMessage(chatId,
-    `👋 Selamat datang di bot VIP @ujoyp!\n\nPilih paket yang kamu inginkan:\n\n` +
+    `👋 Selamat datang di bot VIP @${ADMIN_USERNAME}!\n\nPilih paket yang kamu inginkan:\n\n` +
     `📦 Lokal - Rp2.000\n📦 Cina - Rp2.000\n📦 Asia - Rp2.000\n📦 Amerika - Rp2.000\n📦 Yaoi - Rp2.000\n📦 Semua Channel - Rp6.000`,
     {
       reply_markup: {
@@ -85,8 +87,7 @@ async function showMainMenu(ctx) {
           ['📦 Yaoi', '📦 Semua Channel'],
           ['❌ Batalkan Pesanan']
         ],
-        resize_keyboard: true,
-        one_time_keyboard: false
+        resize_keyboard: true
       }
     });
 }
@@ -97,15 +98,11 @@ async function showMainMenu(ctx) {
 bot.start(showMainMenu);
 
 // =======================
-// Pilih Paket via Reply Keyboard
+// Pilih Paket
 // =======================
 bot.hears([
-  '📦 Lokal',
-  '📦 Cina',
-  '📦 Asia',
-  '📦 Amerika',
-  '📦 Yaoi',
-  '📦 Semua Channel'
+  '📦 Lokal', '📦 Cina', '📦 Asia',
+  '📦 Amerika', '📦 Yaoi', '📦 Semua Channel'
 ], async (ctx) => {
   const text = ctx.message.text;
   const userId = ctx.from.id;
@@ -131,18 +128,13 @@ bot.hears([
   const caption = `📦 *${pkg.name}* – Rp${pkg.harga.toLocaleString('id-ID')}\n\n` +
     `Silakan scan QR di atas lalu kirim bukti pembayaran (foto/screenshot) ke sini.\n\n` +
     `*Jangan kirim bukti palsu, kamu bisa di-banned!*\n` +
-    `Butuh bantuan? Hubungi admin @ujoyp`;
+    `Butuh bantuan? Hubungi admin @${ADMIN_USERNAME}`;
 
-  await ctx.replyWithPhoto(DANA_QR_LINK, {
-    caption,
-    parse_mode: 'Markdown'
-  });
+  await ctx.replyWithPhoto(DANA_QR_LINK, { caption, parse_mode: 'Markdown' });
 
   const reminderId = setTimeout(() => {
     if (users[userId]?.status === 'pending') {
-      safeSendMessage(userId, `⏰ Pengingat! Kamu masih memiliki pembayaran paket *${pkg.name}*.`, {
-        parse_mode: 'Markdown'
-      });
+      safeSendMessage(userId, `⏰ Pengingat! Kamu masih memiliki pembayaran paket *${pkg.name}*.`, { parse_mode: 'Markdown' });
     }
   }, REMINDER_TIMEOUT);
 
@@ -157,11 +149,10 @@ bot.hears([
 });
 
 // =======================
-// Bukti pembayaran (foto)
+// Bukti pembayaran
 // =======================
 bot.on('photo', async (ctx) => {
   const userId = ctx.from.id;
-
   if (!users[userId] || users[userId].status !== 'pending') {
     return await safeSendMessage(userId, '❌ Kamu tidak memiliki transaksi aktif. Ketik /start untuk memulai.');
   }
@@ -171,49 +162,59 @@ bot.on('photo', async (ctx) => {
   users[userId].timeoutIds.forEach(id => clearTimeout(id));
   users[userId].timeoutIds = [];
 
-  try {
-    const user = ctx.from;
-    const photo = ctx.message.photo.at(-1).file_id;
+  const user = ctx.from;
+  const photo = ctx.message.photo.at(-1).file_id;
 
-    const caption = `📥 *User mengirim bukti transfer!*\n\n` +
-      `👤 *Nama:* ${user.first_name}\n` +
-      `🆔 *ID:* \`${user.id}\`\n` +
-      `📦 *Paket:* ${pkg.name}`;
+  const caption = `📥 *User mengirim bukti transfer!*\n\n` +
+    `👤 *Nama:* ${user.first_name}\n` +
+    `🆔 *ID:* \`${user.id}\`\n` +
+    `📦 *Paket:* ${pkg.name}`;
 
-    await bot.telegram.sendPhoto(ADMIN_ID, photo, {
-      caption,
-      parse_mode: 'Markdown'
-    });
+  await bot.telegram.sendPhoto(ADMIN_ID, photo, { caption, parse_mode: 'Markdown' });
 
-    await sendInstructionToUser(userId, pkg);
-  } catch (e) {
-    console.error(e);
-  }
+  await sendInstructionToUser(userId, pkg);
 });
 
 // =======================
-// Fungsi kirim instruksi ke user
+// Kirim instruksi + masa aktif
 // =======================
 async function sendInstructionToUser(userId, pkg) {
   try {
     const now = new Date();
-    const tanggal = now.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false });
-    const formatPesan = `beli nama vip : ${pkg.name}\ntanggal bayar : ${tanggal}`;
+    const tanggalMulai = now.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false });
+    const expDate = new Date(now.getTime() + AKTIF_DURASI);
+    const tanggalExp = expDate.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false });
+
+    const formatPesan = `beli nama vip : ${pkg.name}\ntanggal bayar : ${tanggalMulai}\nkedaluwarsa : ${tanggalExp}`;
     const encodedText = encodeURIComponent(formatPesan);
-    const adminLink = `https://t.me/ujoyp?text=${encodedText}`;
+
+    const adminLink = ADMIN_USERNAME
+      ? `https://t.me/${ADMIN_USERNAME}?text=${encodedText}`
+      : `tg://user?id=${ADMIN_ID}&text=${encodedText}`;
 
     const textInstruksi =
       `✅ Bukti pembayaran sudah diterima!\n\n` +
-      `Untuk mendapatkan akses VIP, kirim pesan ke admin @ujoyp dengan format berikut:\n\n` +
+      `📅 *Tanggal Aktif:* ${tanggalMulai}\n` +
+      `⏰ *Berlaku hingga:* ${tanggalExp}\n\n` +
+      `Untuk mendapatkan akses VIP, kirim pesan ke admin dengan format berikut:\n\n` +
       `📋 *Format Pesan:*\n\`\`\`\n${formatPesan}\n\`\`\`\n` +
-      `admin : @ujoyp`;
+      `Klik tombol di bawah untuk menghubungi admin.`;
 
+    // Kirim pesan dengan reply keyboard + inline tombol chat admin
     await safeSendMessage(userId, textInstruksi, {
       parse_mode: 'Markdown',
       reply_markup: {
+        inline_keyboard: [
+          [{ text: '💬 Chat Admin Sekarang', url: adminLink }]
+        ]
+      }
+    });
+
+    // Tambahkan reply keyboard terpisah setelahnya
+    await safeSendMessage(userId, 'Gunakan tombol di bawah untuk navigasi:', {
+      reply_markup: {
         keyboard: [
-          ['💬 Chat Admin Sekarang'],
-          ['🔙 Kembali ke Menu']
+          ['🔙 Kembali ke Menu'],
         ],
         resize_keyboard: true
       }
@@ -224,7 +225,7 @@ async function sendInstructionToUser(userId, pkg) {
 }
 
 // =======================
-// Command Tambahan
+// Command tambahan
 // =======================
 bot.command('help', async (ctx) => {
   await safeSendMessage(ctx.chat.id,
@@ -237,7 +238,7 @@ bot.command('help', async (ctx) => {
     `📌 *Perintah:*\n` +
     `/batal – Batalkan transaksi\n` +
     `/help – Bantuan\n\n` +
-    `Hubungi admin: @ujoyp`,
+    `Hubungi admin: @${ADMIN_USERNAME}`,
     { parse_mode: 'Markdown' });
 });
 
@@ -246,15 +247,13 @@ bot.command('batal', async (ctx) => {
   if (!users[userId] || users[userId].status !== 'pending') {
     return await safeSendMessage(userId, '❌ Kamu tidak memiliki transaksi aktif.');
   }
-
   users[userId].timeoutIds.forEach(id => clearTimeout(id));
   delete users[userId];
-
   await safeSendMessage(userId, '✅ Transaksi berhasil dibatalkan.');
 });
 
 // =======================
-// Keyboard Handler Tambahan
+// Keyboard Handler
 // =======================
 bot.hears('❌ Batalkan Pesanan', async (ctx) => {
   const userId = ctx.from.id;
@@ -267,22 +266,6 @@ bot.hears('❌ Batalkan Pesanan', async (ctx) => {
 });
 
 bot.hears('🔙 Kembali ke Menu', async (ctx) => showMainMenu(ctx));
-bot.hears('💬 Chat Admin Sekarang', async (ctx) => {
-  await ctx.reply('Klik link berikut untuk menghubungi admin: https://t.me/ujoyp');
-});
-
-// =======================
-// Error Handler Global
-// =======================
-bot.catch((err, ctx) => {
-  const chatId = ctx.chat?.id || ctx.callbackQuery?.from?.id;
-  if (err?.response?.error_code === 403 && chatId) {
-    console.log(`User ${chatId} memblokir bot.`);
-    delete users[chatId];
-  } else {
-    console.error('Unhandled error:', err);
-  }
-});
 
 // =======================
 // Jalankan Bot
