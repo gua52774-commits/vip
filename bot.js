@@ -7,7 +7,7 @@ const BOT_TOKEN = '8006865528:AAE0vGWwNX1TpNKkRqShTKCygbq1RkPLm64';
 const DANA_QR_LINK = 'https://files.catbox.moe/mxovdq.jpg';
 const DANA_NUMBER = '087883536039';
 const ADMIN_ID = 7598563861;
-const ADMIN_USERNAME = 'jnizo'; // ubah username admin
+const ADMIN_USERNAME = 'jnipo'; // ubah username admin
 
 const REMINDER_TIMEOUT = 12 * 60 * 60 * 1000; // 12 jam
 const PAYMENT_TIMEOUT = 24 * 60 * 60 * 1000; // 24 jam
